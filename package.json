@@ -8,7 +8,7 @@
     "dev": "nodemon ./src/app.ts",
     "build": "npx tsc",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migrate": "typeorm-ts-node-commonjs migration:run -d \".\\src\\database\\data_source.ts\""
+    "migrate": "typeorm-ts-node-commonjs migration:run -d \"./src/database/data_source.ts\""
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
