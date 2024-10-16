@@ -1,0 +1,21 @@
+{
+  "ts-node": {
+    "compiler": "typescript",
+    "files": true
+  },
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strictPropertyInitialization": false,
+    "experimentalDecorators": true,
+    "target": "es2016",
+    "module": "commonjs",
+    "typeRoots": ["./node_modules/@types", "src/env.d.ts"],
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
