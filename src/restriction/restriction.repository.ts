@@ -26,6 +26,28 @@ export class RestrictionRepository {
     return await chatRestriction.save();
   }
 
+  public async removeRestriction(
+    user: User,
+    chat: Chat,
+    restriction: UserRestrictionEnum
+  ): Promise<void> {
+    const chatRestriction = await this.userChatRestrctionRepo.findOne({
+      where: {
+        user: {
+          id: user.id,
+        },
+        chat: {
+          id: chat.id,
+        },
+        restriction: restriction
+      },
+    });
+
+    if(!chatRestriction) return;
+
+    await chatRestriction.remove();
+  }
+
   public async getUserRestrictions(user: User): Promise<UserChatRestriction[]> {
     const restrictions = await this.userChatRestrctionRepo.find({
       where: {

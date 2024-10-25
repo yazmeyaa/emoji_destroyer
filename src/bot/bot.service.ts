@@ -6,6 +6,7 @@ import { UserService } from "../user/user.service";
 import { ChatService } from "../chat/chat.service";
 import { RestrictionService } from "../restriction/restriction.service";
 import { UserRestrictionEnum } from "../restriction/user_chat_restriction.model";
+import { replyToMessage, useRightsCheck } from "./bot.helpers";
 
 export type CommandType = MiddlewareFn<Context<Update>>;
 
@@ -24,24 +25,9 @@ export class BotService {
 
   private onSilence(): CommandType {
     return Composer.command(/silence/, async (ctx) => {
-      if (ctx.message.from.id !== 279603779) {
-        const msg = "У ТЕБЯ НЕТ ЗДЕСЬ ВЛАСТИ.";
-        await ctx.react("🖕");
-        await ctx.reply(msg, {
-          entities: [{ offset: 0, length: msg.length, type: "bold" }],
-        });
-        return;
-      }
-      const targetId = ctx.message.reply_to_message?.from?.id;
-      if (!targetId) {
-        const msg =
-          "СООБЩЕНИЕ НЕОБХОДИМО ИСПОЛЬЗОВАТЬ В ОТВЕТ НА ЧУЖОЕ СООБЩЕНИЕ.";
-        await ctx.react("💩");
-        await ctx.reply(msg, {
-          entities: [{ offset: 0, length: msg.length, type: "bold" }],
-        });
-        return;
-      }
+      const { check, targetId } = useRightsCheck(ctx, 279603779);
+      const checkResult = await check();
+      if (!checkResult || !targetId) return;
 
       const user = await this.userSerivce.getUser(targetId);
       const chat = await this.chatService.getChat(ctx.chat.id);
@@ -54,15 +40,29 @@ export class BotService {
       const okMessage =
         "ВЫПОЛНЕНО. ПОЛЬЗОВАТЕЛЬ БОЛЬШЕ НЕ СМОЖЕТ ПОЛЬЗОВАТЬСЯ ПРЕМИУМ ЭМОДЖИ.";
       await ctx.react("⚡");
-      await ctx.reply(okMessage, {
-        entities: [
-          {
-            offset: 0,
-            length: okMessage.length,
-            type: "bold",
-          },
-        ],
-      });
+      await replyToMessage(ctx, okMessage);
+    });
+  }
+
+  private onUnmute(): CommandType {
+    return Composer.command(/unmute/, async (ctx) => {
+      const { check, targetId } = useRightsCheck(ctx, 279603779);
+      const checkResult = await check();
+      if (!checkResult || !targetId) return;
+
+      const user = await this.userSerivce.getUser(targetId);
+      const chat = await this.chatService.getChat(ctx.chat.id);
+
+      await this.restrctionService.removeUserRestriction(
+        user,
+        chat,
+        UserRestrictionEnum.NoPremiumEmojis
+      );
+      await ctx.react("🍾");
+      await replyToMessage(
+        ctx,
+        "ПОЛЬЗОВАТЕЛЬ СНОВА МОЖЕТ ОТПРАВЛЯТЬ ПРЕМИУМ ЭМОДЗИ"
+      );
     });
   }
 
@@ -78,9 +78,7 @@ export class BotService {
       if (restrictions.length === 0) {
         const msg = "У ТЕБЯ НЕТ ОГРАНИЧЕНИЙ.";
         await ctx.react("🏆");
-        await ctx.reply(msg, {
-          entities: [{ offset: 0, length: msg.length, type: "bold" }],
-        });
+        await replyToMessage(ctx, msg);
         return;
       }
 
@@ -91,14 +89,12 @@ export class BotService {
 
       const msg = parts.join("\n");
       await ctx.react("🤪");
-      await ctx.reply(msg, {
-        entities: [{ offset: 0, length: msg.length, type: "bold" }],
-      });
+      await replyToMessage(ctx, msg);
     });
   }
 
   private configureCommands(): void {
-    this.bot.use(this.onSilence(), this.onInfo());
+    this.bot.use(this.onSilence(), this.onInfo(), this.onUnmute());
   }
 
   public async start(): Promise<void> {

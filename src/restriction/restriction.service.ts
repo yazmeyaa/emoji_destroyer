@@ -26,8 +26,16 @@ export class RestrictionService {
     if (restricts.some((x) => x.restriction === restrictionType)) {
       return restricts.find((x) => x.restriction === restrictionType)!;
     }
-    
+
     return this.restrictionRepo.restrictUser(user, chat, restrictionType);
+  }
+
+  public async removeUserRestriction(
+    user: User,
+    chat: Chat,
+    restrictionType: UserRestrictionEnum
+  ): Promise<void> {
+    return this.restrictionRepo.removeRestriction(user, chat, restrictionType);
   }
 
   public getUserRestrictions(user: User): Promise<UserChatRestriction[]> {
